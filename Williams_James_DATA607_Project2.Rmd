@@ -1,0 +1,102 @@
+---
+title: 'DATA 607: Project 2'
+author: "James Williams"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+### Import Libraries
+```{r}
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(Hmisc)
+```
+---
+
+# DATA SET 1: National Inventory of Dams: Arkansas
+
+https://nid.sec.usace.army.mil/ords/f?p=105:19:10737731657977::NO:::
+```{r, eval=TRUE}
+dams <- read.csv("https://raw.githubusercontent.com/jambawilliams/DATA607_PROJECT2/master/AK_U.csv", header=TRUE, stringsAsFactors = FALSE)
+head(dams)
+```
+### Clean data 
+
+Remove excess columns, null values, and empty cells
+```{r, eval=TRUE}
+dams <- dams[, c("DAM_NAME", "CITY", "YEAR_COMPLETED", "MAX_STORAGE")]
+dams %>% 
+    mutate_all(~ifelse(. %in% c("N/A", "NONE", "null", ""), NA, .)) %>% 
+    na.omit()
+```
+### Analyze data
+
+There is a gradual slight increase over time in dam storage capacity until about 1990 and then the capacity of new dams under construction generally decreases.  Seven dams were had storage capacities that far exceded the average dam capacity.
+```{r, eval=TRUE}
+ggplot(dams)+
+  geom_point(mapping = aes(dams$YEAR_COMPLETED, dams$MAX_STORAGE), show.legend=FALSE)+
+  geom_smooth(mapping = aes(dams$YEAR_COMPLETED, dams$MAX_STORAGE), show.legend=FALSE, color = "red")+
+  ggtitle("Historical Dam Construction Trends in Arkansas")+
+  xlab("Year of Construction")+
+  ylab("Storage Capacity")
+```
+---
+# DATA SET 2: NYC AP Test Rates
+
+https://data.cityofnewyork.us/Education/2010-AP-College-Board-School-Level-Results/itfs-ms3e
+```{r, eval=TRUE}
+tests <- read.csv("https://raw.githubusercontent.com/jambawilliams/DATA607_PROJECT2/master/2010__AP__College_Board__School_Level_Results.csv", header=TRUE, stringsAsFactors = FALSE)
+head(tests)
+```
+### Clean data 
+
+Rename columns, null values, and empty cells
+```{r, eval=TRUE}
+tests <- select(tests, -c("DBN"))
+tests <- tests %>% rename( "School" = "SchoolName", "Taker_Count" = "AP.Test.Takers", "Exam_Count"="Total.Exams.Taken", "Pass_Count"="Number.of.Exams.with.scores.3.4.or.5" )
+tests %>%
+    mutate_all(~ifelse(. %in% c("N/A", "NONE", "null", ""), NA, .)) %>% 
+    na.omit()%>%
+    mutate(School = toupper(School))
+```
+### Analyze data
+
+There are about a dozen schools in NYC that have AP pass counts far above average counts.  This could be due to larger study body and AP student enrollment among other factors.
+```{r, eval=TRUE}
+ggplot(tests)+
+  geom_point(mapping = aes(tests$School, tests$Pass_Count), show.legend=FALSE)+
+  ggtitle("NYC Schools 2010 AP Pass Counts")+
+  xlab("School")+
+  ylab("Number AP Passing Scores")
+```
+---
+# DATA SET 3: NYC Gifted and Talented Scores
+
+https://makingnoiseandhearingthings.com/2018/04/19/datasets-for-data-cleaning-practice/
+```{r, eval=TRUE}
+gifted <- read.csv("https://raw.githubusercontent.com/jambawilliams/DATA607_PROJECT2/master/G%26T%20Results%202018-19%20Responses%20-%20Sheet1.csv", header=TRUE, stringsAsFactors = FALSE)
+head(gifted)
+```
+### Clean data 
+
+Rename columns, null values, and empty cells
+```{r, eval=TRUE}
+gifted <- gifted[, c("District", "Overall.Score")]
+gifted <- gifted %>% rename("Score" = "Overall.Score")
+gifted %>%
+    mutate_all(~ifelse(. %in% c("N/A", "NONE", "null", ""), NA, .)) %>% 
+    na.omit()
+```
+### Analyze data
+
+Only eight districts have gifted student placements.  The vast majority of gifted student are in District 2.
+```{r, eval=TRUE}
+ggplot(gifted, aes(District)) + 
+geom_bar() +
+ggtitle("NYC Gifted Students Placement")+
+xlab("School District")+
+ylab("Count of Gifted Students")
+```
